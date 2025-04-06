@@ -1,72 +1,77 @@
--- ChandiHub: Fighting Styles Shop + Instant Kill Aura
-local player = game.Players.LocalPlayer
+-- ChandiHub with Anti-Cheat Bypass (Basic)
+-- Made by Chandieswar
 
--- Create ScreenGui
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "ChandiHub"
-screenGui.Parent = player:WaitForChild("PlayerGui")
+-- // Basic Anti-Cheat & Kick Protection
+pcall(function()
+    local mt = getrawmetatable(game)
+    setreadonly(mt, false)
+    local old = mt.__namecall
 
--- Create Frame
-local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 300, 0, 150)
-frame.Position = UDim2.new(0.5, -150, 0.5, -75)
-frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-frame.Parent = screenGui
-
--- Create Title Label
-local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, 0, 0, 40)
-title.Text = "ChandiHub"
-title.Font = Enum.Font.SourceSansBold
-title.TextColor3 = Color3.new(1, 1, 1)
-title.BackgroundTransparency = 1
-title.TextSize = 24
-title.Parent = frame
-
--- Create "Buy Fighting Styles" Button
-local buyStylesButton = Instance.new("TextButton")
-buyStylesButton.Size = UDim2.new(0.8, 0, 0, 40)
-buyStylesButton.Position = UDim2.new(0.1, 0, 0.3, 0)
-buyStylesButton.Text = "Buy Fighting Styles"
-buyStylesButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-buyStylesButton.TextColor3 = Color3.new(1, 1, 1)
-buyStylesButton.Parent = frame
-
--- Create "Enable Kill Aura" Button
-local killAuraButton = Instance.new("TextButton")
-killAuraButton.Size = UDim2.new(0.8, 0, 0, 40)
-killAuraButton.Position = UDim2.new(0.1, 0, 0.7, 0)
-killAuraButton.Text = "Enable Kill Aura"
-killAuraButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-killAuraButton.TextColor3 = Color3.new(1, 1, 1)
-killAuraButton.Parent = frame
-
--- Function to handle "Buy Fighting Styles" button click
-buyStylesButton.MouseButton1Click:Connect(function()
-    local styles = {"Superhuman", "Dragon Talon", "Electric Claw", "Sharkman Karate", "Death Step"}
-    for _, style in ipairs(styles) do
-        local remote = game:GetService("ReplicatedStorage"):FindFirstChild("Remotes"):FindFirstChild("BuyFightingStyle")
-        if remote then
-            remote:InvokeServer(style)
-        else
-            warn("Buy Remote not found for " .. style)
+    mt.__namecall = newcclosure(function(self, ...)
+        local method = getnamecallmethod()
+        if method == "Kick" or method == "kick" then
+            return warn("[ChandiHub] Kick prevented!")
         end
-    end
+        return old(self, ...)
+    end)
+
+    hookfunction(game.Players.LocalPlayer.Kick, function()
+        return warn("[ChandiHub] Kick blocked!")
+    end)
 end)
 
--- Function to handle "Enable Kill Aura" button click
-killAuraButton.MouseButton1Click:Connect(function()
-    spawn(function()
-        while wait(0.3) do
-            for _, enemy in pairs(workspace.Enemies:GetChildren()) do
-                if enemy:FindFirstChild("Humanoid") and enemy:FindFirstChild("HumanoidRootPart") then
-                    local dist = (player.Character.HumanoidRootPart.Position - enemy.HumanoidRootPart.Position).Magnitude
-                    if dist < 100 then
-                        enemy.Humanoid.Health = 0
-                        enemy:MoveTo(Vector3.new(9e9, 9e9, 9e9))
+-- // GUI Creation
+local ScreenGui = Instance.new("ScreenGui")
+local Frame = Instance.new("Frame")
+local KillAura = Instance.new("TextButton")
+local ShopBuy = Instance.new("TextButton")
+
+ScreenGui.Parent = game.CoreGui
+ScreenGui.Name = "ChandiHub"
+Frame.Parent = ScreenGui
+Frame.Position = UDim2.new(0.3, 0, 0.3, 0)
+Frame.Size = UDim2.new(0, 200, 0, 120)
+Frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+Frame.BorderSizePixel = 0
+Frame.Active = true
+Frame.Draggable = true
+
+KillAura.Parent = Frame
+KillAura.Text = "Kill Aura (Raids)"
+KillAura.Position = UDim2.new(0, 10, 0, 10)
+KillAura.Size = UDim2.new(0, 180, 0, 40)
+KillAura.BackgroundColor3 = Color3.fromRGB(90, 90, 90)
+KillAura.MouseButton1Click:Connect(function()
+    pcall(function()
+        while true do
+            task.wait(0.2)
+            for _, npc in pairs(workspace.Enemies:GetDescendants()) do
+                if npc:FindFirstChild("Humanoid") and (npc:FindFirstChild("HumanoidRootPart") or npc.PrimaryPart) then
+                    local hrp = npc:FindFirstChild("HumanoidRootPart") or npc.PrimaryPart
+                    if (hrp.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).magnitude < 100 then
+                        npc.Humanoid.Health = 0
                     end
                 end
             end
         end
     end)
+end)
+
+ShopBuy.Parent = Frame
+ShopBuy.Text = "Buy All Fighting Styles"
+ShopBuy.Position = UDim2.new(0, 10, 0, 65)
+ShopBuy.Size = UDim2.new(0, 180, 0, 40)
+ShopBuy.BackgroundColor3 = Color3.fromRGB(90, 90, 90)
+ShopBuy.MouseButton1Click:Connect(function()
+    local events = {
+        "CombatStyle1", "CombatStyle2", "Electric", "WaterKungFu", "DragonBreath", "SuperHuman"
+    }
+    for _, v in pairs(events) do
+        local remote = game:GetService("ReplicatedStorage").Remotes:FindFirstChild(v)
+        if remote then
+            pcall(function()
+                remote:FireServer()
+            end)
+        end
+    end
 end)
